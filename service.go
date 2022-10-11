@@ -19,7 +19,7 @@ type Matcher struct {
 var matcher Matcher
 var operator2Selector map[string]Selector
 
-func matcherInit() {
+func init() {
 	matcher.dict = make(map[string][]string)
 	matcher.getDictAndOriginalDict("E:\\MatchingService\\dict.csv")
 	matcher.getInvertedIndex()
@@ -124,12 +124,12 @@ func (m *Matcher) matchWithQueries(queries string) ([][]string, error) {
 	possibleChoices := m.getAllPossibleChoices()
 	//  “==” equal, “!=” not equal, “$=” equal (case insensitive), “&=” contain (the query term is a substring of the data cell)
 	for _, query := range queryArr {
-		selector, ok := operator2Selector[query[1]]
+		selector, ok := operator2Selector[query[2]]
 		if !ok {
 			return nil, errors.New("wrong operator")
 		}
 		tmpPossibleChoices := selector.selectWithQuery(&matcher, query)
-		if query[3] == "and" {
+		if query[0] == "and" {
 			possibleChoices = getIntersection(tmpPossibleChoices, possibleChoices)
 		} else {
 			possibleChoices = getUnion(tmpPossibleChoices, possibleChoices)
@@ -187,52 +187,76 @@ func (m *Matcher) getInvertedIndex() {
 // to
 // [[C1,==,A,and][C2,&=,B,or]]
 func separateQueries(queries string) ([][]string, error) {
-	err := checkIfQueriesValid(queries)
+	words, err := checkIfQueriesValid(queries)
 	if err != nil {
 		log.Printf("[seperateQueries] queries not invalid: %v", queries)
 		return nil, errors.New("invalid query")
 	}
 	queryArr := make([][]string, 0)
-
+	for i := 0; i < len(words); i += 4 {
+		queryArr = append(queryArr, words[i:i+4])
+	}
 	return queryArr, nil
 }
 
 // C1 == "A" or C2 %26= "B"
-func checkIfQueriesValid(queries string) error {
+func checkIfQueriesValid(queries string) ([]string, error) {
 	words := strings.Split(queries, " ")
 	// if words is empty, it needs to be handled specially to avoid expose non-exist "and"
 	if len(words) == 0 {
 		errMsg := "empty query"
 		log.Printf(errMsg)
-		return errors.New(errMsg)
+		return nil, errors.New(errMsg)
 	}
 	// add an extra "and" at head to make it 4-circle
 	words = append([]string{"and"}, words...)
+	log.Printf("%v, words: %v", len(words), words)
 	for i, word := range words {
 		switch i % 4 {
 		case 0:
 			if word != "and" && word != "or" {
 				errMsg := "wrong query near " + word
 				log.Printf(errMsg)
-				return errors.New(errMsg)
+				return nil, errors.New(errMsg)
 			}
 		case 1:
+			continue
 		case 2:
-			if _, ok := operator2Selector[word]; ok {
+			if _, ok := operator2Selector[word]; !ok {
 				errMsg := "wrong query near " + word
 				log.Printf(errMsg)
-				return errors.New(errMsg)
+				return nil, errors.New(errMsg)
 			}
 		case 3:
+			tmp, err := checkIfWordsWithQuotation(word)
+			if err != nil {
+				return nil, errors.New(err.Error())
+			}
+			words[i] = tmp
 		}
 	}
 	// if the words cannot be divided by 4, then something near tail wrong
 	if len(words)%4 != 0 {
 		errMsg := "wrong query near " + words[len(words)-1]
 		log.Printf(errMsg)
-		return errors.New(errMsg)
+		return nil, errors.New(errMsg)
 	}
-	return nil
+	return words, nil
+}
+
+func checkIfWordsWithQuotation(word string) (string, error) {
+	n := len(word)
+	if n < 2 {
+		errMsg := "wrong query near " + word
+		log.Printf(errMsg)
+		return "", errors.New(errMsg)
+	}
+	if word[0] != '"' || word[n-1] != '"' {
+		errMsg := "wrong query near " + word
+		errMsg += " ,need quotation"
+		return "", errors.New(errMsg)
+	}
+	return word[1 : n-1], nil
 }
 
 type Selector interface {
@@ -251,14 +275,14 @@ type ContainSelector struct {
 func (e *EqualSelector) selectWithQuery(m *Matcher, query []string) map[int]struct{} {
 	possibleChoices := make(map[int]struct{})
 
-	if query[0] != "*" {
-		columns, ok := m.dict[query[0]]
+	if query[1] != "*" {
+		columns, ok := m.dict[query[1]]
 		if !ok {
-			log.Printf("[selectWithQuery] with title %v not found", query[0])
+			log.Printf("[selectWithQuery] with title %v not found", query[1])
 			return possibleChoices
 		}
 		for i := 0; i < m.choicesNum; i++ {
-			if columns[i] == query[2] {
+			if columns[i] == query[3] {
 				possibleChoices[i] = struct{}{}
 			}
 		}
@@ -266,7 +290,7 @@ func (e *EqualSelector) selectWithQuery(m *Matcher, query []string) map[int]stru
 		for i, choices := range m.originalDict[1:] {
 			valid := true
 			for _, choice := range choices {
-				if choice != query[2] {
+				if choice != query[3] {
 					valid = false
 					break
 				}
@@ -282,14 +306,14 @@ func (e *EqualSelector) selectWithQuery(m *Matcher, query []string) map[int]stru
 func (e *NotEqualSelector) selectWithQuery(m *Matcher, query []string) map[int]struct{} {
 	possibleChoices := make(map[int]struct{})
 
-	if query[0] != "*" {
-		columns, ok := m.dict[query[0]]
+	if query[1] != "*" {
+		columns, ok := m.dict[query[1]]
 		if !ok {
-			log.Printf("[selectWithQuery] with title %v not found", query[0])
+			log.Printf("[selectWithQuery] with title %v not found", query[1])
 			return possibleChoices
 		}
 		for i := 0; i < m.choicesNum; i++ {
-			if columns[i] != query[2] {
+			if columns[i] != query[3] {
 				possibleChoices[i] = struct{}{}
 			}
 		}
@@ -297,7 +321,7 @@ func (e *NotEqualSelector) selectWithQuery(m *Matcher, query []string) map[int]s
 		for i, choices := range m.originalDict[1:] {
 			valid := true
 			for _, choice := range choices {
-				if choice == query[2] {
+				if choice == query[3] {
 					valid = false
 					break
 				}
@@ -313,14 +337,14 @@ func (e *NotEqualSelector) selectWithQuery(m *Matcher, query []string) map[int]s
 func (e *ContainSelector) selectWithQuery(m *Matcher, query []string) map[int]struct{} {
 	possibleChoices := make(map[int]struct{})
 
-	if query[0] != "*" {
-		columns, ok := m.dict[query[0]]
+	if query[1] != "*" {
+		columns, ok := m.dict[query[1]]
 		if !ok {
-			log.Printf("[selectWithQuery] with title %v not found", query[0])
+			log.Printf("[selectWithQuery] with title %v not found", query[1])
 			return possibleChoices
 		}
 		for i := 0; i < m.choicesNum; i++ {
-			if strings.Contains(columns[i], query[2]) {
+			if strings.Contains(columns[i], query[3]) {
 				possibleChoices[i] = struct{}{}
 			}
 		}
@@ -328,7 +352,7 @@ func (e *ContainSelector) selectWithQuery(m *Matcher, query []string) map[int]st
 		for i, choices := range m.originalDict[1:] {
 			valid := true
 			for _, choice := range choices {
-				if !strings.Contains(choice, query[2]) {
+				if !strings.Contains(choice, query[3]) {
 					valid = false
 					break
 				}
@@ -344,14 +368,14 @@ func (e *ContainSelector) selectWithQuery(m *Matcher, query []string) map[int]st
 func (e *EqualInsensitiveCaseSelector) selectWithQuery(m *Matcher, query []string) map[int]struct{} {
 	possibleChoices := make(map[int]struct{})
 
-	if query[0] != "*" {
-		columns, ok := m.dict[query[0]]
+	if query[1] != "*" {
+		columns, ok := m.dict[query[1]]
 		if !ok {
-			log.Printf("[selectWithQuery] with title %v not found", query[0])
+			log.Printf("[selectWithQuery] with title %v not found", query[1])
 			return possibleChoices
 		}
 		for i := 0; i < m.choicesNum; i++ {
-			if strings.ToLower(columns[i]) == strings.ToLower(query[2]) {
+			if strings.ToLower(columns[i]) == strings.ToLower(query[3]) {
 				possibleChoices[i] = struct{}{}
 			}
 		}
@@ -359,7 +383,7 @@ func (e *EqualInsensitiveCaseSelector) selectWithQuery(m *Matcher, query []strin
 		for i, choices := range m.originalDict[1:] {
 			valid := true
 			for _, choice := range choices {
-				if strings.ToLower(choice) != strings.ToLower(query[2]) {
+				if strings.ToLower(choice) != strings.ToLower(query[3]) {
 					valid = false
 					break
 				}

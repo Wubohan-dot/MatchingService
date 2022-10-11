@@ -1,15 +1,20 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"net/http"
 )
 
 func checkIfValid(r *http.Request) error {
+	r.ParseForm()
+	if len(r.Form) < 1 {
+		return errors.New("query not found")
+	}
 	return nil
 }
 
-// 127.0.0.1:9527/?query=C1 == "A" or C2 %26= "B"
+// 127.0.0.1:9527/?query=C == "c1" or C2 %26= "B"
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	log.Println(r.Form)
@@ -18,8 +23,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 		w.Write([]byte(err.Error()))
+		return
 	}
-	matcherInit()
 	resp, err := matcher.matchWithQueries(r.Form["query"][0])
 	for _, res := range resp {
 		for _, re := range res {
