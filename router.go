@@ -47,6 +47,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 	filename, err := makeTmpFile(resp)
 
+	// https://segmentfault.com/a/1190000020202158
 	file, err := os.Open(filename)
 	content, err := ioutil.ReadAll(file)
 	file.Close()
