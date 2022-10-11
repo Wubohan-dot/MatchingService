@@ -64,13 +64,18 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
-func makeTmpFile(resp [][]string) (string, error) {
+func generateFileName() string {
 	filename := "./output-" + strconv.FormatInt(rand.Int63(), 10)
 	filename += ".csv"
+	return filename
+}
+
+func makeTmpFile(resp [][]string) (string, error) {
+	filename := generateFileName()
 
 	xlsFile, fErr := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0766)
 	if fErr != nil {
-		fmt.Println("Export:created excel file failed ==", fErr)
+		log.Println("Export:created excel file failed ==", fErr)
 		return "", errors.New("fail to generate file")
 	}
 	defer xlsFile.Close()
