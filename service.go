@@ -4,8 +4,10 @@ import (
 	"encoding/csv"
 	"errors"
 	"log"
+	"math/rand"
 	"os"
 	"strings"
+	"time"
 )
 
 type Matcher struct {
@@ -24,6 +26,7 @@ func init() {
 	matcher.getDictAndOriginalDict("E:\\MatchingService\\dict.csv")
 	matcher.getInvertedIndex()
 	selectorInit()
+	rand.Seed(time.Now().Unix())
 }
 
 func selectorInit() {
