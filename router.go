@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -43,26 +45,51 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// filename, err := makeTmpFile(resp)
-
 	filename := generateFileName()
 
-	// https://segmentfault.com/a/1190000020202158
-	// file, err := os.Open(filename)
 	content := csvFormatResp(resp)
 	log.Printf("%+v", content)
-	// file.Close()
+
 	fileName := url.QueryEscape(filename) // to avoid Chinese
 	w.Header().Add("Content-Type", "application/octet-stream")
 	w.Header().Add("Content-Disposition", "attachment; filename=\""+fileName+"\"")
 	w.Write(content)
 
-	//defer func() {
-	//	err = os.Remove(filename)
-	//	if err != nil {
-	//		fmt.Println("remove  excel file failed", err)
-	//	}
-	//}()
+}
+
+func indexHandlerWithFile(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	log.Println(r.Form)
+
+	err := checkIfValid(r)
+	if err != nil {
+		log.Println(err)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	resp, err := matcher.matchWithQueries(r.Form["query"][0])
+	if err != nil {
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	filename, err := makeTmpFile(resp)
+
+	// https://segmentfault.com/a/1190000020202158
+	file, err := os.Open(filename)
+	content, err := ioutil.ReadAll(file)
+	file.Close()
+	fileName := url.QueryEscape(filename) // to avoid Chinese
+	w.Header().Add("Content-Type", "application/octet-stream")
+	w.Header().Add("Content-Disposition", "attachment; filename=\""+fileName+"\"")
+	w.Write(content)
+
+	defer func() {
+		err = os.Remove(filename)
+		if err != nil {
+			fmt.Println("remove  excel file failed", err)
+		}
+	}()
 }
 
 func csvFormatResp(resp [][]string) []byte {
