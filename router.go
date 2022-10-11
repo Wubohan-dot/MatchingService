@@ -1,21 +1,26 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
+func checkIfValid(r *http.Request) error {
+	return nil
+}
+
 // 127.0.0.1:9527/?query=C1 == "A" or C2 %26= "B"
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	//w.Write([]byte(string("post")))
 	r.ParseForm()
-	fmt.Println(r.Form)
-	fmt.Println(r.Form["query"])
-	if len(r.Form["query"]) == 0 {
-		w.Write([]byte("need a query"))
-	} else {
-		w.Write([]byte(r.Form["query"][0]))
+	log.Println(r.Form)
+
+	err := checkIfValid(r)
+	if err != nil {
+		log.Println(err)
+		w.Write([]byte(err.Error()))
 	}
+
+	//w.Write([]byte(r.Form["query"][0]))
 }
 
 func main() {
