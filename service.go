@@ -19,7 +19,7 @@ type Matcher struct {
 var matcher Matcher
 var operator2Selector map[string]Selector
 
-func init() {
+func matcherInit() {
 	matcher.dict = make(map[string][]string)
 	matcher.getDictAndOriginalDict("E:\\MatchingService\\dict.csv")
 	matcher.getInvertedIndex()
@@ -193,11 +193,45 @@ func separateQueries(queries string) ([][]string, error) {
 		return nil, errors.New("invalid query")
 	}
 	queryArr := make([][]string, 0)
-	//todo: seperate
+
 	return queryArr, nil
 }
 
+// C1 == "A" or C2 %26= "B"
 func checkIfQueriesValid(queries string) error {
+	words := strings.Split(queries, " ")
+	// if words is empty, it needs to be handled specially to avoid expose non-exist "and"
+	if len(words) == 0 {
+		errMsg := "empty query"
+		log.Printf(errMsg)
+		return errors.New(errMsg)
+	}
+	// add an extra "and" at head to make it 4-circle
+	words = append([]string{"and"}, words...)
+	for i, word := range words {
+		switch i % 4 {
+		case 0:
+			if word != "and" && word != "or" {
+				errMsg := "wrong query near " + word
+				log.Printf(errMsg)
+				return errors.New(errMsg)
+			}
+		case 1:
+		case 2:
+			if _, ok := operator2Selector[word]; ok {
+				errMsg := "wrong query near " + word
+				log.Printf(errMsg)
+				return errors.New(errMsg)
+			}
+		case 3:
+		}
+	}
+	// if the words cannot be divided by 4, then something near tail wrong
+	if len(words)%4 != 0 {
+		errMsg := "wrong query near " + words[len(words)-1]
+		log.Printf(errMsg)
+		return errors.New(errMsg)
+	}
 	return nil
 }
 

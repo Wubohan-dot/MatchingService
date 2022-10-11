@@ -19,6 +19,13 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		w.Write([]byte(err.Error()))
 	}
+	matcherInit()
+	resp, err := matcher.matchWithQueries(r.Form["query"][0])
+	for _, res := range resp {
+		for _, re := range res {
+			w.Write([]byte(re))
+		}
+	}
 
 	//w.Write([]byte(r.Form["query"][0]))
 }
