@@ -10,38 +10,46 @@ type Matcher struct {
 	dict map[string][]string
 }
 
-func (m *Matcher) readDict(fileName string) error {
+func (m *Matcher) readFile(fileName string) ([][]string, error) {
 	opencast, err := os.Open(fileName)
 	if err != nil {
 		log.Fatalf("[readDict] fail to open file: %v, error: %v", fileName, err)
-		return err
+		return nil, err
 	}
 	defer opencast.Close()
 
 	reader := csv.NewReader(opencast)
 	reader.FieldsPerRecord = -1
-	record, err := reader.ReadAll()
+	records, err := reader.ReadAll()
 	if err != nil {
 		log.Fatalf("[readDict] error: %v", err)
-		return err
+		return nil, err
 	}
 
-	err = checkIfDictValid(record)
+	log.Printf("[readDict] success, record: %+v with %v rows and %v columns", records, len(records), len(records[0]))
+	return records, nil
+}
+
+func (m *Matcher) getDict(fileName string) error {
+	records, err := m.readFile(fileName)
 	if err != nil {
-		log.Fatalf("[readDict] not valid: %v", err)
+		log.Fatalf("[getDict] err:%v", err)
 		return err
 	}
-
-	log.Printf("[readDict] success, record: %+v with %v rows and %v columns", record, len(record), len(record[0]))
+	err = m.formatToDict(records)
+	if err != nil {
+		log.Fatalf("[getDict] err:%v", err)
+		return err
+	}
 	return nil
 }
 
-func checkIfDictValid([][]string) error {
+func (m *Matcher) formatToDict(records [][]string) error {
 	return nil
 }
 
 var matcher Matcher
 
 func init() {
-	matcher.readDict("E:\\MatchingService\\dict.csv")
+	matcher.getDict("E:\\MatchingService\\dict.csv")
 }
