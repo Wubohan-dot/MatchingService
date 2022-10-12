@@ -19,14 +19,8 @@ func checkIfValid(r *http.Request) error {
 	return nil
 }
 
-// 127.0.0.1:9527/?query=C == "c1" or C %26= "c"
-// &	%26 contains
-// $	%24 insensitive case
-// 127.0.0.1:9527/?query=C == "c1" or C %26=
-// 127.0.0.1:9527/?query=C"c1" or C %26= "c"
-// 127.0.0.1:9527/?query=C == "c1" or C %26= c
-// 127.0.0.1:9527/?query=C == "c1" or A %26= "c"
-// 127.0.0.1:9527/?query=C == "c1" or A %26= "a"
+// IndexHandler
+// responsible for basic http match task: call matcher.MatcherWithQueries to obtain data, and format it to CSV file when respond
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	log.Println(r.Form)
@@ -55,6 +49,8 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// IndexHandlerWithFile
+// It functions just like IndexHandler. However, it really generates a temp CSV file to record response, and delete the file afterwards.
 func IndexHandlerWithFile(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	log.Println(r.Form)

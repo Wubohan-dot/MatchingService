@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+// getUnion
+// get Union of the given two hashset
 func getUnion(choices map[int]struct{}, choices2 map[int]struct{}) map[int]struct{} {
 	possibleChoices := make(map[int]struct{})
 	for k, _ := range choices {
@@ -21,6 +23,8 @@ func getUnion(choices map[int]struct{}, choices2 map[int]struct{}) map[int]struc
 	return possibleChoices
 }
 
+// getIntersection
+// get Intersection of the given two hashset
 func getIntersection(choices map[int]struct{}, choices2 map[int]struct{}) map[int]struct{} {
 	possibleChoices := make(map[int]struct{})
 	for k, _ := range choices {
@@ -31,24 +35,8 @@ func getIntersection(choices map[int]struct{}, choices2 map[int]struct{}) map[in
 	return possibleChoices
 }
 
-// separateQueries:
-// queries like: C1 == "A" or C2 %26= "B"
-// to
-// [[C1,==,A,and][C2,&=,B,or]]
-func separateQueries(queries string) ([][]string, error) {
-	words, err := checkIfQueriesValid(queries)
-	if err != nil {
-		log.Printf("[seperateQueries] queries not invalid: %v", queries)
-		return nil, errors.New("invalid query")
-	}
-	queryArr := make([][]string, 0)
-	for i := 0; i < len(words); i += 4 {
-		queryArr = append(queryArr, words[i:i+4])
-	}
-	return queryArr, nil
-}
-
-// C1 == "A" or C2 %26= "B"
+// checkIfQueriesValid
+// check if queries like C1 == "A" or C2 %26= "B" can be converted to [[and,C1,==,A][or,C2,&=,B]]
 func checkIfQueriesValid(queries string) ([]string, error) {
 	words := strings.Split(queries, " ")
 	// if words is empty, it needs to be handled specially to avoid expose non-exist "and"
@@ -93,6 +81,8 @@ func checkIfQueriesValid(queries string) ([]string, error) {
 	return words, nil
 }
 
+// checkIfWordsWithQuotation
+// check if the value of query is covered with quotations
 func checkIfWordsWithQuotation(word string) (string, error) {
 	n := len(word)
 	if n < 2 {

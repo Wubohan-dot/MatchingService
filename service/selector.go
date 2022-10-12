@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+// Selector
+// interface of selector, its implementations handle different operators of query
 type Selector interface {
 	selectWithQuery(*Matcher, []string) map[int]struct{}
 }

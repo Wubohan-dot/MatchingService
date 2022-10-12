@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+// Matcher
+// the structure responsible for matching task
+// originalDict: to store the original data in CSV file, for example, [[A,B,C],[a1,b1,c1],[a2,b2,c2]]
+// dict: to store a map from title to its column, to help with processing tasks, for example [A:[a1,a2],B:[b1,b2],C:[c1,c2]]
+// columnNum indicates number of columns, since A,B,C, it's 3
+// choicesNum indicates rows in the table(except for title row), it's 2
 type Matcher struct {
 	originalDict  [][]string
 	dict          map[string][]string
@@ -20,6 +26,9 @@ type Matcher struct {
 var matcher Matcher
 var operator2Selector map[string]Selector
 
+// init
+// to init service package, mainly including a matcher and a map of selector
+// the matcher.dict and the
 func init() {
 	matcher.dict = make(map[string][]string)
 	matcher.getDictAndOriginalDict("E:\\MatchingService\\dict.csv")
@@ -28,10 +37,14 @@ func init() {
 	rand.Seed(time.Now().Unix())
 }
 
+// MatcherInstance
+// to return an existing matcher in service package
 func MatcherInstance() *Matcher {
 	return &matcher
 }
 
+// getDictAndOriginalDict
+// read from file and fill in matcher.dict and matcher.originalDict
 func (m *Matcher) getDictAndOriginalDict(fileName string) error {
 	records, err := m.readFile(fileName)
 	if err != nil {
@@ -87,6 +100,11 @@ func (m *Matcher) formatToDict(records [][]string) error {
 	return nil
 }
 
+// checkIfRecordsValid
+// check if the data read from CSV file valid or not, it requires:
+// 1. One row for title + at least one row for data
+// 2. The column name(title) only be characters or digits (A-Z, a-z, 0-9, case sensitive)
+// 3. Each row has the same length
 func (m *Matcher) checkIfRecordsValid(records [][]string) error {
 	// check if there are at least two rows: one for title and one for content
 	if len(records) < 2 {
@@ -112,8 +130,11 @@ func (m *Matcher) checkIfRecordsValid(records [][]string) error {
 	return nil
 }
 
+// MatchWithQueries
+// the main function to handle task
+// accepts queries in a whole string and returns answer rows with column name
 func (m *Matcher) MatchWithQueries(queries string) ([][]string, error) {
-	queryArr, err := separateQueries(queries)
+	queryArr, err := m.separateQueries(queries)
 	if err != nil {
 		log.Printf("[MatchWithQueries] cannot separate queries to array: %v\n", queries)
 		return nil, errors.New("invalid queries")
@@ -136,6 +157,23 @@ func (m *Matcher) MatchWithQueries(queries string) ([][]string, error) {
 	}
 	resp := m.buildRespWithPossibleChoicesAndTitle(possibleChoices)
 	return resp, nil
+}
+
+// separateQueries:
+// queries like: C1 == "A" or C2 %26= "B"
+// to
+// [[and,C1,==,A][or,C2,&=,B]]
+func (m *Matcher) separateQueries(queries string) ([][]string, error) {
+	words, err := checkIfQueriesValid(queries)
+	if err != nil {
+		log.Printf("[seperateQueries] queries not invalid: %v", queries)
+		return nil, errors.New("invalid query")
+	}
+	queryArr := make([][]string, 0)
+	for i := 0; i < len(words); i += 4 {
+		queryArr = append(queryArr, words[i:i+4])
+	}
+	return queryArr, nil
 }
 
 func (m *Matcher) getAllPossibleChoices() map[int]struct{} {
