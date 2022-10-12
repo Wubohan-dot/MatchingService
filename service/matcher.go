@@ -31,7 +31,7 @@ var operator2Selector map[string]Selector
 // the matcher.dict and the
 func init() {
 	matcher.dict = make(map[string][]string)
-	matcher.getDictAndOriginalDict("E:\\MatchingService\\dict.csv")
+	matcher.getDictAndOriginalDict("./dict.csv")
 	matcher.getInvertedIndex()
 	selectorInit()
 	rand.Seed(time.Now().Unix())
@@ -48,13 +48,13 @@ func MatcherInstance() *Matcher {
 func (m *Matcher) getDictAndOriginalDict(fileName string) error {
 	records, err := m.readFile(fileName)
 	if err != nil {
-		log.Printf("[getDictAndOriginalDict] err:%v", err)
+		log.Fatalf("[getDictAndOriginalDict] err:%v", err)
 		return err
 	}
 	m.originalDict = records
 	err = m.formatToDict(records)
 	if err != nil {
-		log.Printf("[getDictAndOriginalDict] err:%v", err)
+		log.Fatalf("[getDictAndOriginalDict] err:%v", err)
 		return err
 	}
 	return nil
@@ -137,7 +137,7 @@ func (m *Matcher) MatchWithQueries(queries string) ([][]string, error) {
 	queryArr, err := m.separateQueries(queries)
 	if err != nil {
 		log.Printf("[MatchWithQueries] cannot separate queries to array: %v\n", queries)
-		return nil, errors.New("invalid queries")
+		return nil, err
 	}
 	// queryNum := len(queryArr)
 	possibleChoices := m.getAllPossibleChoices()
@@ -167,7 +167,7 @@ func (m *Matcher) separateQueries(queries string) ([][]string, error) {
 	words, err := checkIfQueriesValid(queries)
 	if err != nil {
 		log.Printf("[seperateQueries] queries not invalid: %v", queries)
-		return nil, errors.New("invalid query")
+		return nil, err
 	}
 	queryArr := make([][]string, 0)
 	for i := 0; i < len(words); i += 4 {
