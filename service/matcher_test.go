@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"fmt"
@@ -34,7 +34,7 @@ func TestMatchWithQueries(t *testing.T) {
 		"C == \"c1\"", "C != \"c2\"", "C $= \"C1\"", "C &= \"1\"",
 	}
 	for _, successCase := range successCases {
-		resp, err := matcher.matchWithQueries(successCase)
+		resp, err := matcher.MatchWithQueries(successCase)
 		fmt.Printf("case:%v\tresp:%v\terr:%v\n", successCase, resp, err)
 	}
 
@@ -44,7 +44,7 @@ func TestMatchWithQueries(t *testing.T) {
 		"* &= \"2\"",
 	}
 	for _, successCase := range successCases {
-		resp, err := matcher.matchWithQueries(successCase)
+		resp, err := matcher.MatchWithQueries(successCase)
 		fmt.Printf("case:%v\tresp:%v\terr:%v\n", successCase, resp, err)
 	}
 
@@ -54,7 +54,7 @@ func TestMatchWithQueries(t *testing.T) {
 		"* &= \"3\"",
 	}
 	for _, successCase := range successCases {
-		resp, err := matcher.matchWithQueries(successCase)
+		resp, err := matcher.MatchWithQueries(successCase)
 		fmt.Printf("case:%v\tresp:%v\terr:%v\n", successCase, resp, err)
 	}
 
@@ -65,7 +65,7 @@ func TestMatchWithQueries(t *testing.T) {
 		"C == \"c2\" and B == \"b2\"", "C == \"c2\" and B == \"b1\"",
 	}
 	for _, successCase := range successCases {
-		resp, err := matcher.matchWithQueries(successCase)
+		resp, err := matcher.MatchWithQueries(successCase)
 		fmt.Printf("case:%v\tresp:%v\terr:%v\n", successCase, resp, err)
 	}
 
@@ -76,7 +76,7 @@ func TestMatchWithQueries(t *testing.T) {
 		"C == \"c2\" or B == \"www\"", "C == \"c2\" or B == \"b1\"",
 	}
 	for _, successCase := range successCases {
-		resp, err := matcher.matchWithQueries(successCase)
+		resp, err := matcher.MatchWithQueries(successCase)
 		fmt.Printf("case:%v\tresp:%v\terr:%v\n", successCase, resp, err)
 	}
 
@@ -87,7 +87,7 @@ func TestMatchWithQueries(t *testing.T) {
 		"C == \"c2\" or B == \"www\" and B == \"www\"", "C == \"c2\" or B == \"b1\" and A == \"a1\"",
 	}
 	for _, successCase := range successCases {
-		resp, err := matcher.matchWithQueries(successCase)
+		resp, err := matcher.MatchWithQueries(successCase)
 		fmt.Printf("case:%v\tresp:%v\terr:%v\n", successCase, resp, err)
 	}
 }
